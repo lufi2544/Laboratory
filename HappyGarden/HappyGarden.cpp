@@ -2,14 +2,19 @@
 //
 
 #include <iostream>
-
- #if _WITH_WINDOWS
- #include "WindowsPlatform.h"
- #endif
+#include "Math.h"
+#include "Platform.h"
 
 int main()
 {
+
+    ISHMatrix* matrix = new ISHMatrix();
+
+
+
+
     std::cout << "Hello World!\n";
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
