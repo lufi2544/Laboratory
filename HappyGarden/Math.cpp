@@ -3,7 +3,6 @@
 #include <math.h>
 
 
-//Make i, j uint32
 
 const float& ISHMatrix::GetElementValue(uint32 i, uint32 j)
 {
@@ -41,8 +40,8 @@ float ISHMatrix::CalculateDeterminant()
 
 		float Value = m_MatrixComponents[0][ItColumn]->val;
 		float PowValue = pow(-1, (1 + (m_MatrixComponents[0][ItColumn]->j + 1)));
-		std::unique_ptr<ISHMatrix> MatrixMinor = std::unique_ptr<ISHMatrix>(ComputeMatrixMinor(0, ItColumn));
-		float RecursiveDeterminant = MatrixMinor.get()->CalculateDeterminant();
+		std::unique_ptr<ISHMatrix> MatrixMinor = ComputeMatrixMinor(0, ItColumn);
+		float RecursiveDeterminant = MatrixMinor->CalculateDeterminant();
 
 		det += Value * PowValue * RecursiveDeterminant;
 	}
@@ -50,7 +49,7 @@ float ISHMatrix::CalculateDeterminant()
 	return det;
 }
 
-ISHMatrix* ISHMatrix::ComputeMatrixMinor(float _i, float _j)
+std::unique_ptr<ISHMatrix> ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 {
 
 
@@ -72,14 +71,14 @@ ISHMatrix* ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 		// If we have a 1X1 matrix, we just return the matrix itself
 		std::vector<float> Row;
 		Row.push_back(GetElementValue(0, 0));
-		return new ISHMatrix(1, 1, Row);
+		return std::make_unique<ISHMatrix>(1, 1, Row);
 	}
 
 
-	std::vector<std::vector<ISHMatrixComponent*>> MinorMatrixValues;
+	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> MinorMatrixValues;
 	for (int it_row = 0; it_row < m_numRows; ++it_row)
 	{
-		std::vector<ISHMatrixComponent*> MinorMatrixRow;
+		std::vector<std::shared_ptr<ISHMatrixComponent>> MinorMatrixRow;
 
 		for (int it_column = 0; it_column < m_numColumns; ++it_column)
 		{
@@ -88,9 +87,7 @@ ISHMatrix* ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 
 			if (i != _i && j != _j)
 			{
-				ISHMatrixComponent* component = new ISHMatrixComponent(m_MatrixComponents[it_row][it_column]->val);
-				MinorMatrixRow.push_back(component);
-
+				MinorMatrixRow.push_back(std::make_shared<ISHMatrixComponent>(m_MatrixComponents[it_row][it_column]->val));
 			}
 		}
 		if (MinorMatrixRow.size() > 0)
@@ -100,15 +97,14 @@ ISHMatrix* ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 
 	}
 
-	auto a = new ISHMatrix(MinorMatrixValues);
-	return a;
+	return std::make_unique<ISHMatrix>(MinorMatrixValues);
 }
 
-ISHMatrix* ISHMatrix::ComputeTranspose()
+std::unique_ptr<ISHMatrix> ISHMatrix::ComputeTranspose()
 {
 
 	ISHMatrix matrixCopy = *this;
-	ISHMatrix* transpose = new ISHMatrix(m_numColumns, m_numRows);
+	std::unique_ptr<ISHMatrix> transpose = std::make_unique<ISHMatrix>(m_numColumns, m_numRows);
 
 	// Change the i and j of the components of the matrix, then we just compute the new matrix.	
 	for (int r = 0; r < matrixCopy.m_numRows; ++r)
@@ -123,15 +119,16 @@ ISHMatrix* ISHMatrix::ComputeTranspose()
 			matrixCopy.m_MatrixComponents[r][c]->j = n_j;
 
 			transpose->m_MatrixComponents[c][r] = matrixCopy.m_MatrixComponents[r][c];
+			transpose->m_MatrixComponents[c][r]->i = c;
+			transpose->m_MatrixComponents[c][r]->j = r;
 		}
 	}
 
 	return transpose;
 }
 
-ISHMatrix* ISHMatrix::ComputeInverse()
+std::unique_ptr<ISHMatrix> ISHMatrix::ComputeInverse()
 {
-	ISHMatrix* returnMatrix = new ISHMatrix();
 
 	if (!IsQuadratic() || !IsInvertible())
 	{
@@ -140,12 +137,11 @@ ISHMatrix* ISHMatrix::ComputeInverse()
 
 		return nullptr;
 	}
-	std::unique_ptr<ISHMatrix> MatrixAdjunt = std::unique_ptr<ISHMatrix>(ComputeAdjunt());
-	returnMatrix = *MatrixAdjunt.get()->ComputeTranspose() * ((float)1 / CalculateDeterminant());
-	return returnMatrix;
+
+	return (*ComputeAdjunt()->ComputeTranspose() * ((float)1 / CalculateDeterminant()));
 }
 
-ISHMatrix* ISHMatrix::ComputeAdjunt()
+std::unique_ptr<ISHMatrix> ISHMatrix::ComputeAdjunt()
 {
 
 	if (!IsQuadratic())
@@ -153,16 +149,14 @@ ISHMatrix* ISHMatrix::ComputeAdjunt()
 		return nullptr;
 	}
 
-	ISHMatrix* returnMatrix = new ISHMatrix(m_numRows, m_numColumns);
+	std::unique_ptr<ISHMatrix> returnMatrix = std::make_unique<ISHMatrix>(m_numRows, m_numColumns);
 
 	for (auto rows : m_MatrixComponents)
 	{
-
 		// Same case with the adjunt and the determinant when it comes to the format of the first matrix element.
 		for (auto elements : rows)
 		{
-
-			std::unique_ptr<ISHMatrix> Matrix = std::unique_ptr<ISHMatrix>(ComputeMatrixMinor((elements)->i, elements->j));
+			std::unique_ptr<ISHMatrix> Matrix = ComputeMatrixMinor((elements)->i, elements->j);
 			float a = Matrix->CalculateDeterminant();
 			float i = std::pow(-1, (elements->i + 1 + elements->j + 1));
 			float n_elementVal = i * a;
@@ -190,12 +184,12 @@ void ISHMatrix::ComputeEmptyMatrix()
 
 	for (uint32 ItRow = 0; ItRow < m_numRows; ++ItRow)
 	{
-		std::vector<ISHMatrixComponent*>l_Row;
+		std::vector<std::shared_ptr<ISHMatrixComponent>>l_Row;
 
 		for (uint32 ItColumn = 0; ItColumn < m_numColumns; ++ItColumn)
 		{
 
-			l_Row.push_back(new ISHMatrixComponent(ItRow, ItColumn, 0));
+			l_Row.push_back(std::make_shared<ISHMatrixComponent>(ItRow, ItColumn, 0));
 
 		}
 
@@ -210,7 +204,7 @@ void ISHMatrix::ComputeMatrixFromVector(std::vector<float>& InComponentValues)
 
 	for (int RowIdx = 0; RowIdx < m_numRows; ++RowIdx)
 	{
-		std::vector<ISHMatrixComponent*> Row;
+		std::vector<std::shared_ptr<ISHMatrixComponent>> Row;
 		for (int ColumnIdx = 0; ColumnIdx < m_numColumns; ++ColumnIdx)
 		{
 
@@ -226,7 +220,7 @@ void ISHMatrix::ComputeMatrixFromVector(std::vector<float>& InComponentValues)
 			}
 
 			auto Idx = (m_numColumns * RowIdx) + ColumnIdx;
-			Row.push_back((new ISHMatrixComponent(RowIdx, ColumnIdx, InComponentValues[Idx])));
+			Row.push_back((std::make_shared<ISHMatrixComponent>(RowIdx, ColumnIdx, InComponentValues[Idx])));
 
 
 		}
@@ -242,7 +236,7 @@ void ISHMatrix::ComputeMatrixFromVector(std::vector<float>& InComponentValues)
 	}
 }
 
-void ISHMatrix::ComputeMatriFromMatrixComponents(std::vector<std::vector<ISHMatrixComponent*>>& compononents)
+void ISHMatrix::ComputeMatriFromMatrixComponents(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& compononents)
 {
 	int RowIdx = 0;
 	auto it_rows = compononents.begin();
@@ -269,3 +263,37 @@ void ISHMatrix::ComputeMatriFromMatrixComponents(std::vector<std::vector<ISHMatr
 	}
 
 }
+
+std::ostream& operator << (std::ostream& os, ISHMatrix matrix)
+{
+
+
+	float u = 1;
+	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>::iterator it_MatrixRows = matrix.m_MatrixComponents.begin();
+
+	while (it_MatrixRows != matrix.m_MatrixComponents.end())
+	{
+		std::vector<std::shared_ptr<ISHMatrixComponent>>::iterator it_it_MatrixRows = (*it_MatrixRows).begin();
+
+		while (it_it_MatrixRows != (*it_MatrixRows).end())
+		{
+
+			if (it_it_MatrixRows->get()->i != u)
+			{
+				u = it_it_MatrixRows->get()->i;
+				std::cout << std::endl;
+
+			}
+
+			std::cout << it_it_MatrixRows->get()->val << "  ";
+
+			it_it_MatrixRows++;
+		}
+
+
+		it_MatrixRows++;
+	}
+
+	return os;
+};
+
