@@ -2,6 +2,7 @@
 #include <vector>
 #include "Platform.h"
 
+
 struct ISHMatrixComponent
 {
 	ISHMatrixComponent()
@@ -37,6 +38,10 @@ struct ISHMatrix
 	{
 
 	};
+	ISHMatrix(ISHMatrix* m)
+	{
+		*this = *m;
+	}
 
 	ISHMatrix(uint32 m, uint32 n)
 		: m_numRows(m),
@@ -52,25 +57,32 @@ struct ISHMatrix
 		ComputeMatrixFromVector(members);
 	};
 
-	ISHMatrix(std::vector<std::vector<ISHMatrixComponent*>>& Incomponents)
+	ISHMatrix(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& Incomponents)
 	{
 		ComputeMatriFromMatrixComponents(Incomponents);
 	};
+
+	~ISHMatrix()
+	{
+		m_MatrixComponents.clear();
+	}
 
 	// Columns
 	uint32 m_numColumns = 0;
 
 	//Rows
 	uint32 m_numRows = 0;
-	std::vector<std::vector<ISHMatrixComponent*>> m_MatrixComponents;
+	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> m_MatrixComponents;
 
+	//We could return raw pointers here as the Matrix is treaded as
+	//a non-dynamically allocated object, the API uses smart pointers.
 
+	std::unique_ptr<ISHMatrix> ComputeMatrixMinor(float i, float j);
+	std::unique_ptr<ISHMatrix> ComputeTranspose();
+	std::unique_ptr<ISHMatrix> ComputeInverse();
+	std::unique_ptr<ISHMatrix> ComputeAdjunt();
 	float	   CalculateDeterminant();
-	ISHMatrix* ComputeMatrixMinor(float i, float j);
-	ISHMatrix* ComputeTranspose();
-	ISHMatrix* ComputeInverse();
-	ISHMatrix* ComputeAdjunt();
-	bool			   IsQuadratic();
+	bool			    IsQuadratic();
 	bool			   IsInvertible();
 
 	const float& GetElementValue(uint32 i, uint32 j);
@@ -79,7 +91,7 @@ struct ISHMatrix
 	// Helper function for constructing a new matrix with a certain m rows and n columns
 	void  ComputeEmptyMatrix();
 
-	inline ISHMatrix* operator * (float num)
+	inline std::unique_ptr<ISHMatrix> operator * (float num)
 	{
 		for (auto& rows : m_MatrixComponents)
 		{
@@ -91,16 +103,18 @@ struct ISHMatrix
 			}
 		}
 
-		return this;
+		return std::make_unique<ISHMatrix>(this);
 	}
 
 	void operator = (ISHMatrix* matrix)
 	{
 		m_MatrixComponents = matrix->m_MatrixComponents;
+		m_numColumns = matrix->m_numColumns;
+		m_numRows = matrix->m_numRows;
 	}
 private:
 
 	//  Helper function that creates a matrix ( constructor ).
 	void ComputeMatrixFromVector(std::vector<float>& InComponentsValues);
-	void ComputeMatriFromMatrixComponents(std::vector<std::vector<ISHMatrixComponent*>>& compononents);
+	void ComputeMatriFromMatrixComponents(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& compononents);
 };
