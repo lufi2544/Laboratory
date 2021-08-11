@@ -76,18 +76,18 @@ std::unique_ptr<ISHMatrix> ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 
 
 	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> MinorMatrixValues;
-	for (int it_row = 0; it_row < m_numRows; ++it_row)
+	for (int r = 0; r < m_numRows; ++r)
 	{
 		std::vector<std::shared_ptr<ISHMatrixComponent>> MinorMatrixRow;
 
-		for (int it_column = 0; it_column < m_numColumns; ++it_column)
+		for (int c = 0; c < m_numColumns; ++c)
 		{
-			float i = m_MatrixComponents[it_row][it_column]->i;
-			float j = m_MatrixComponents[it_row][it_column]->j;
+			float i = m_MatrixComponents[r][c]->i;
+			float j = m_MatrixComponents[r][c]->j;
 
 			if (i != _i && j != _j)
 			{
-				MinorMatrixRow.push_back(std::make_shared<ISHMatrixComponent>(m_MatrixComponents[it_row][it_column]->val));
+				MinorMatrixRow.push_back(std::make_shared<ISHMatrixComponent>(m_MatrixComponents[r][c]->val));
 			}
 		}
 		if (MinorMatrixRow.size() > 0)
@@ -182,14 +182,14 @@ bool ISHMatrix::IsInvertible()
 void ISHMatrix::ComputeEmptyMatrix()
 {
 
-	for (uint32 ItRow = 0; ItRow < m_numRows; ++ItRow)
+	for (uint32 r = 0; r < m_numRows; ++r)
 	{
 		std::vector<std::shared_ptr<ISHMatrixComponent>>l_Row;
 
-		for (uint32 ItColumn = 0; ItColumn < m_numColumns; ++ItColumn)
+		for (uint32 c = 0; c < m_numColumns; ++c)
 		{
 
-			l_Row.push_back(std::make_shared<ISHMatrixComponent>(ItRow, ItColumn, 0));
+			l_Row.push_back(std::make_shared<ISHMatrixComponent>(r, c, 0));
 
 		}
 
