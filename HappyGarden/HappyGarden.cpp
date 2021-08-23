@@ -15,6 +15,8 @@ int main()
 
     std::cout << "Hello World!\n";
 
+    delete matrix;
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
