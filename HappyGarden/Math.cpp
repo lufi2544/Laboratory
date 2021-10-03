@@ -75,15 +75,16 @@ std::unique_ptr<ISHMatrix> ISHMatrix::ComputeMatrixMinor(float _i, float _j)
 	}
 
 
-	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> MinorMatrixValues;
+	ComponentVec MinorMatrixValues;
+
 	for (int r = 0; r < m_numRows; ++r)
 	{
 		std::vector<std::shared_ptr<ISHMatrixComponent>> MinorMatrixRow;
 
 		for (int c = 0; c < m_numColumns; ++c)
 		{
-			float i = m_MatrixComponents[r][c]->i;
-			float j = m_MatrixComponents[r][c]->j;
+			const float i = m_MatrixComponents[r][c]->i;
+			const float j = m_MatrixComponents[r][c]->j;
 
 			if (i != _i && j != _j)
 			{
@@ -112,8 +113,8 @@ std::unique_ptr<ISHMatrix> ISHMatrix::ComputeTranspose()
 		for (int c = 0; c < matrixCopy.m_numColumns; ++c)
 		{
 
-			float n_i = matrixCopy.m_MatrixComponents[r][c]->j;
-			float n_j = matrixCopy.m_MatrixComponents[r][c]->j;
+			const float n_i = matrixCopy.m_MatrixComponents[r][c]->j;
+			const float n_j = matrixCopy.m_MatrixComponents[r][c]->j;
 
 			matrixCopy.m_MatrixComponents[r][c]->i = n_i;
 			matrixCopy.m_MatrixComponents[r][c]->j = n_j;
@@ -179,24 +180,6 @@ bool ISHMatrix::IsInvertible()
 	return CalculateDeterminant() != 0;
 }
 
-void ISHMatrix::ComputeEmptyMatrix()
-{
-
-	for (uint32 r = 0; r < m_numRows; ++r)
-	{
-		std::vector<std::shared_ptr<ISHMatrixComponent>>l_Row;
-
-		for (uint32 c = 0; c < m_numColumns; ++c)
-		{
-
-			l_Row.push_back(std::make_shared<ISHMatrixComponent>(r, c, 0));
-
-		}
-
-		m_MatrixComponents.push_back(l_Row);
-	}
-}
-
 void ISHMatrix::ComputeMatrixFromVector(std::vector<float>& InComponentValues)
 {
 	int matrixSize = m_numColumns * m_numRows;
@@ -236,7 +219,7 @@ void ISHMatrix::ComputeMatrixFromVector(std::vector<float>& InComponentValues)
 	}
 }
 
-void ISHMatrix::ComputeMatriFromMatrixComponents(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& compononents)
+void ISHMatrix::ComputeMatriFromMatrixComponents(ComponentVec& compononents)
 {
 	int RowIdx = 0;
 	auto it_rows = compononents.begin();
@@ -267,9 +250,9 @@ void ISHMatrix::ComputeMatriFromMatrixComponents(std::vector<std::vector<std::sh
 std::ostream& operator << (std::ostream& os, ISHMatrix matrix)
 {
 
+float u = 1;
 
-	float u = 1;
-	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>::iterator it_MatrixRows = matrix.m_MatrixComponents.begin();
+	ComponentVec::iterator it_MatrixRows = matrix.m_MatrixComponents.begin();
 
 	while (it_MatrixRows != matrix.m_MatrixComponents.end())
 	{

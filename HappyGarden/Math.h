@@ -2,6 +2,14 @@
 #include <vector>
 #include "Platform.h"
 
+struct ISHMatrixComponent;
+
+namespace MathTypeDefs
+{
+    typedef std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> MatrixComponentVec;
+}
+
+using namespace MathTypeDefs;
 
 struct ISHMatrixComponent
 {
@@ -36,31 +44,45 @@ struct ISHMatrix
 	ISHMatrix()
 		: ISHMatrix(1, 1)
 	{
+	}
 
-	};
 	ISHMatrix(ISHMatrix* m)
 	{
 		*this = *m;
 	}
 
+    void Power();
+
 	ISHMatrix(uint32 m, uint32 n)
 		: m_numRows(m),
 		m_numColumns(n)
 	{
-		ComputeEmptyMatrix();
-	};
+        for (uint32 r = 0; r < m_numRows; ++r)
+        {
+            std::vector<std::shared_ptr<ISHMatrixComponent>>l_Row;
+
+            for (uint32 c = 0; c < m_numColumns; ++c)
+            {
+
+                l_Row.push_back(std::make_shared<ISHMatrixComponent>(r, c, 0));
+
+            }
+
+            m_MatrixComponents.push_back(l_Row);
+        }
+	}
 
 	ISHMatrix(uint32 _Rows, uint32 _Columns, std::vector<float> members)
 		: m_numColumns(_Columns),
 		m_numRows(_Rows)
 	{
 		ComputeMatrixFromVector(members);
-	};
+	}
 
-	ISHMatrix(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& Incomponents)
+	ISHMatrix(MatrixComponentVec& Incomponents)
 	{
 		ComputeMatriFromMatrixComponents(Incomponents);
-	};
+	}
 
 	~ISHMatrix()
 	{
@@ -72,7 +94,7 @@ struct ISHMatrix
 
 	//Rows
 	uint32 m_numRows = 0;
-	std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>> m_MatrixComponents;
+    MatrixComponentVec m_MatrixComponents;
 
 	//We could return raw pointers here as the Matrix is treaded as
 	//a non-dynamically allocated object, the API uses smart pointers.
@@ -89,7 +111,22 @@ struct ISHMatrix
 	void SetElementValue(float i, float j, float newValue);
 
 	// Helper function for constructing a new matrix with a certain m rows and n columns
-	void  ComputeEmptyMatrix();
+    inline void  ComputeEmptyMatrix()
+     {
+         for (uint32 r = 0; r < m_numRows; ++r)
+         {
+             std::vector<std::shared_ptr<ISHMatrixComponent>>l_Row;
+
+             for (uint32 c = 0; c < m_numColumns; ++c)
+             {
+
+                 l_Row.push_back(std::make_shared<ISHMatrixComponent>(r, c, 0));
+
+             }
+
+             m_MatrixComponents.push_back(l_Row);
+         }
+     }
 
 	inline std::unique_ptr<ISHMatrix> operator * (float num)
 	{
@@ -112,9 +149,18 @@ struct ISHMatrix
 		m_numColumns = matrix->m_numColumns;
 		m_numRows = matrix->m_numRows;
 	}
+
+
+    void operator = (const ISHMatrix& matrix)
+    {
+        m_MatrixComponents = matrix.m_MatrixComponents;
+        m_numColumns = matrix.m_numColumns;
+        m_numRows = matrix.m_numRows;
+    }
+
 private:
 
 	//  Helper function that creates a matrix ( constructor ).
 	void ComputeMatrixFromVector(std::vector<float>& InComponentsValues);
-	void ComputeMatriFromMatrixComponents(std::vector<std::vector<std::shared_ptr<ISHMatrixComponent>>>& compononents);
+	void ComputeMatriFromMatrixComponents(MatrixComponentVec& compononents);
 };

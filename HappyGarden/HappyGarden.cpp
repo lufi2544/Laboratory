@@ -4,19 +4,15 @@
 #include <iostream>
 #include "Math.h"
 #include "Platform.h"
+#include <windows.h>
 
-int main()
+int32 WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
 
-    ISHMatrix* matrix = new ISHMatrix();
+    auto matrix4 = ISHMatrix();
 
 
-
-
-    std::cout << "Hello World!\n";
-
-    delete matrix;
-
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
